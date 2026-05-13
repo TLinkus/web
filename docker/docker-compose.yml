@@ -1,0 +1,43 @@
+name: korepetitoriai
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: korepetitoriai_app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - app.env
+    ports:
+      - "0.0.0.0:8080:80"
+    volumes:
+      - ..:/var/www/html
+      - composer_cache:/tmp/composer-cache
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.4
+    container_name: korepetitoriai_db
+    environment:
+      MYSQL_DATABASE: korepetitoriai
+      MYSQL_USER: ciuser
+      MYSQL_PASSWORD: cipassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  composer_cache:
